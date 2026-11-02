@@ -7,18 +7,22 @@ signatures, hooks, executable hashes, or compatible Steam builds have been
 verified. The game has not been run here. The DLL never changes resolution,
 projection, FOV, black bars, HUD, subtitles, or game memory.
 
-The prepared 32-bit MinGW-w64 tools build `WolfUltrawide.dll`, a separate
-`WolfUWHost.exe` smoke-test host, and `wolf_core_tests.exe`. This is an **x86**
-starter; verify your actual Steam executable's architecture before considering
-in-game loading. Windows x64 can run the x86 test host.
+The project builds `WolfUltrawide.dll`, a separate `WolfUWHost.exe` smoke-test
+host, and `wolf_core_tests.exe` for **x86 or x64**. The prepared cloud MinGW
+toolchain builds x86; Visual Studio and Windows CI build both architectures.
+Inspect your actual Steam executable and use the matching package. The x86
+package running successfully on 64-bit Windows does not make it an x64 DLL.
 
 ## Start here
 
 For a Windows download without building locally, open this repository's **Actions**
 tab, select a successful **Build starter (no game files)** run, and download
-**observe-only-starter-win32** from its **Artifacts** section. Extract the ZIP
-fully into a writable folder outside Steam. Open PowerShell in that folder and
-run `./Test-Windows.ps1 -BinDir .`. The artifact includes the test scripts and
+**observe-only-starter-x64** for a PE32+/AMD64 executable, or
+**observe-only-starter-win32** for PE32/i386, from its **Artifacts** section.
+Keep the packages in separate folders. Extract the chosen ZIP fully into a
+writable folder outside Steam. Open PowerShell in that folder and run
+`powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./Test-Windows.ps1 -BinDir .`.
+The policy override affects only that child process. The artifact includes the test scripts and
 `START-HERE.txt`; it does not include or modify the game.
 
 The green **Code → Download ZIP** button downloads source only. Build outputs

@@ -1,7 +1,9 @@
 # Building
 
 CMake 3.25+, C++17 and a build tool are required. There are no fetched libraries
-or bundled game dependencies. The runtime target is currently x86 only.
+or bundled game dependencies. The runtime supports x86 and x64 Windows targets.
+Use the architecture of the executable you inspected; an x86 DLL cannot load
+into an x64 game process. No game integration is verified for either target.
 
 ## Prepared cloud Windows toolchain
 
@@ -48,30 +50,30 @@ buffer scanner. They neither load a Windows DLL nor validate game behavior.
 ## Native Windows build with Visual Studio
 
 Install Visual Studio 2022 or Build Tools with **Desktop development with C++**,
-the MSVC x86 tools, a Windows SDK, and CMake 3.25+. In PowerShell from the source
-root:
+the MSVC x86/x64 tools, a Windows SDK, and CMake 3.25+. For an x64 executable,
+run these commands in PowerShell from the source root:
 
 ```powershell
-cmake --preset windows-x86
-cmake --build --preset windows-x86
-ctest --preset windows-x86
-& .\scripts\Test-Windows.ps1 -BinDir .\work\build-msvc-x86\Release
+cmake --preset windows-x64
+cmake --build --preset windows-x64
+ctest --preset windows-x64
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-Windows.ps1 -BinDir .\work\build-msvc-x64\Release -ExpectedArchitecture x64
 ```
 
-The preset selects **Win32**, even on 64-bit Windows, and uses the static MSVC
-runtime. Native Windows CTest includes a DLL smoke test in addition to the core
-test. The PowerShell script adds failure and Unicode-path coverage. The MSVC
-recipe has also passed on GitHub's Windows Server 2022 runner; use the validation
-record for the exact observed results. Your own Windows PC and Steam game still
-need local testing.
+For an x86 executable, substitute `windows-x86`, `build-msvc-x86` and
+`-ExpectedArchitecture x86`. Both presets use the static MSVC runtime and
+separate build folders. Native Windows CTest includes a DLL smoke test in
+addition to the core test. The PowerShell script checks that the host, DLL and
+tests have matching PE architectures, then runs failure and Unicode-path cases.
+The validation record distinguishes observed x86 results from later x64 CI
+results; compilation alone never establishes game compatibility.
 
-If local PowerShell policy blocks a downloaded script, review the script and use
-your normal approved method for running local development scripts. This project
-does not change machine-wide execution policy.
+The example's `-ExecutionPolicy Bypass` applies only to the new PowerShell process;
+it does not change saved machine or user execution-policy settings.
 
 ## CI
 
-The included workflow checks the source allowlist and builds/tests Win32 on a
-Windows runner. It packages a standalone artifact with this project's binaries,
+The included workflow checks the source allowlist and builds/tests x86 and x64 in
+separate Windows jobs. It packages separate standalone artifacts with this project's binaries,
 example INI, inspection/smoke scripts and instructions. A successful run is linked
 in the validation record. These checks do not establish game compatibility.

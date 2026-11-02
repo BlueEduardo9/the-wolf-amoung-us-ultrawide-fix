@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][string]$Exe,
-    [string]$OutFile
+    [string]$OutFile,
+    [ValidateSet('x86', 'x64')][string]$ExpectedArchitecture
 )
 $ErrorActionPreference = 'Stop'
 $exePath = (Resolve-Path -LiteralPath $Exe).ProviderPath
@@ -51,7 +52,11 @@ if ($OutFile) {
     [IO.File]::WriteAllText($destination, $json, (New-Object Text.UTF8Encoding($false)))
 }
 $json
-if ($architecture -ne 'x86' -or $optionalMagic -ne 0x10B) {
-    Write-Warning 'This EXE does not match the x86/PE32 starter. Do not load this DLL into it.'
+if ($architecture -notin @('x86', 'x64')) {
+    Write-Warning 'This EXE is not an x86/x64 target supported by this starter.'
+} elseif (($architecture -eq 'x86' -and $optionalMagic -ne 0x10B) -or ($architecture -eq 'x64' -and $optionalMagic -ne 0x20B)) {
+    Write-Warning 'PE machine and optional header disagree. Do not load a starter DLL into this EXE.'
+} elseif ($ExpectedArchitecture -and $architecture -ne $ExpectedArchitecture) {
+    Write-Warning "This EXE is $architecture; the selected starter is $ExpectedArchitecture. Do not mix architectures."
 }
 Write-Host 'Read-only EXE inspection. Hashing does not establish game or patch compatibility.'

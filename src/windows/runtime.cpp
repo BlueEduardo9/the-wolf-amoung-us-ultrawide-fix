@@ -43,8 +43,9 @@ wolfuw::HostIdentity ReadHostIdentity() {
         throw std::runtime_error("Invalid host DOS header");
     }
     const auto* nt = reinterpret_cast<const IMAGE_NT_HEADERS*>(base + dos->e_lfanew);
-    if (nt->Signature != IMAGE_NT_SIGNATURE || nt->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
-        throw std::runtime_error("Expected a PE32 host");
+    if (nt->Signature != IMAGE_NT_SIGNATURE || nt->OptionalHeader.Magic != wolfuw::runtime_header_magic ||
+        nt->FileHeader.Machine != wolfuw::runtime_machine) {
+        throw std::runtime_error("Host PE architecture does not match this runtime");
     }
     return {nt->FileHeader.Machine, nt->FileHeader.TimeDateStamp, nt->OptionalHeader.SizeOfImage};
 }
@@ -98,6 +99,7 @@ extern "C" std::int32_t WOLF_UW_CALL WolfUW_Initialize(const wchar_t* config_pat
         const auto reference = wolfuw::CenteredReferenceRect(settings, 16.0 / 9.0);
         log << "HOST_EXE=" << Utf8(ModulePath(nullptr).wstring()) << '\n'
             << "HOST_MACHINE=0x" << std::hex << host.machine << std::dec << '\n'
+            << "RUNTIME_ARCHITECTURE=" << wolfuw::runtime_architecture << '\n'
             << "HOST_PE_TIMESTAMP=" << host.pe_timestamp << '\n'
             << "HOST_IMAGE_SIZE=" << host.image_size << '\n'
             << "HOST_IDENTITY_NOTE=PE metadata is diagnostic only; no executable SHA-256 verified\n"

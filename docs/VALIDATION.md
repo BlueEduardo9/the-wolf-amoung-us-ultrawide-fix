@@ -4,6 +4,14 @@ Recorded 2026-11-02 using the prepared Linux build environment and GitHub's
 Windows Server 2022 runner. No game files were available or used. No Steam
 installation or game was executed.
 
+The baseline table below records the original x86 build. x64 support was added
+after local read-only inspection identified an x64/PE32+ target. That report is
+not a verified game profile. The prepared cloud toolchain remains x86; the new
+x64 build, host/DLL tests, inspection script and architecture guards run in a
+separate Windows CI job. Check the matching successful job in
+[Actions](https://github.com/BlueEduardo9/the-wolf-amoung-us-ultrawide-fix/actions)
+for a later artifact; do not infer x64 test results from the x86 baseline.
+
 | Check | Observed result |
 | --- | --- |
 | Prepared toolchain | MinGW-w64 i686 GCC 14 POSIX; CMake 3.31.6; Ninja 1.11.1 |

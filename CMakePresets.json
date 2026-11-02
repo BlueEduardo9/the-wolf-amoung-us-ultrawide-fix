@@ -24,15 +24,25 @@
       "architecture": "Win32",
       "binaryDir": "${sourceDir}/work/build-msvc-x86",
       "cacheVariables": {"WOLF_BUILD_RUNTIME": "ON", "BUILD_TESTING": "ON"}
+    },
+    {
+      "name": "windows-x64",
+      "displayName": "Visual Studio 2022, x64",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/work/build-msvc-x64",
+      "cacheVariables": {"WOLF_BUILD_RUNTIME": "ON", "BUILD_TESTING": "ON"}
     }
   ],
   "buildPresets": [
     {"name": "native-tests", "configurePreset": "native-tests"},
     {"name": "cloud-win32", "configurePreset": "cloud-win32"},
-    {"name": "windows-x86", "configurePreset": "windows-x86", "configuration": "Release"}
+    {"name": "windows-x86", "configurePreset": "windows-x86", "configuration": "Release"},
+    {"name": "windows-x64", "configurePreset": "windows-x64", "configuration": "Release"}
   ],
   "testPresets": [
     {"name": "native-tests", "configurePreset": "native-tests", "output": {"outputOnFailure": true}},
-    {"name": "windows-x86", "configurePreset": "windows-x86", "configuration": "Release", "output": {"outputOnFailure": true}}
+    {"name": "windows-x86", "configurePreset": "windows-x86", "configuration": "Release", "output": {"outputOnFailure": true}},
+    {"name": "windows-x64", "configurePreset": "windows-x64", "configuration": "Release", "output": {"outputOnFailure": true}}
   ]
 }

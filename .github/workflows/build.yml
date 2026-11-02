@@ -9,67 +9,92 @@ permissions:
   contents: read
 
 jobs:
-  windows-x86:
+  windows:
+    name: windows-${{ matrix.arch }}
     runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86
+            machine: '0x014C'
+            artifact: observe-only-starter-win32
+          - arch: x64
+            machine: '0x8664'
+            artifact: observe-only-starter-x64
+    env:
+      WOLF_BUILD_ARCH: ${{ matrix.arch }}
     steps:
       - uses: actions/checkout@v4
       - name: Verify source-only allowlist
         run: python scripts/check_public_files.py
-      - name: Configure Win32
-        run: cmake --preset windows-x86
+      - name: Configure ${{ matrix.arch }}
+        run: cmake --preset windows-${{ matrix.arch }}
       - name: Build
-        run: cmake --build --preset windows-x86
+        run: cmake --build --preset windows-${{ matrix.arch }}
       - name: Core and DLL smoke tests (no game)
-        run: ctest --preset windows-x86
-      - name: Negative cases and Unicode paths (no game)
-        shell: pwsh
-        run: ./scripts/Test-Windows.ps1 -BinDir ./work/build-msvc-x86/Release
-      - name: Inspect our own host executable (no game)
+        run: ctest --preset windows-${{ matrix.arch }}
+      - name: Negative cases and Unicode paths (Windows PowerShell, no game)
+        shell: powershell
+        run: ./scripts/Test-Windows.ps1 -BinDir ./work/build-msvc-${{ matrix.arch }}/Release -ExpectedArchitecture ${{ matrix.arch }}
+      - name: Reject the other architecture before loading
         shell: pwsh
         run: |
-          ./scripts/Inspect-Game.ps1 -Exe ./work/build-msvc-x86/Release/WolfUWHost.exe -OutFile ./work/host-fingerprint.json
+          $wrong = if ($env:WOLF_BUILD_ARCH -eq 'x64') { 'x86' } else { 'x64' }
+          $arguments = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', './scripts/Test-Windows.ps1', '-BinDir', './work/build-msvc-${{ matrix.arch }}/Release', '-ExpectedArchitecture', $wrong)
+          $process = Start-Process powershell.exe -ArgumentList $arguments -WorkingDirectory $PWD.Path -Wait -PassThru -NoNewWindow -RedirectStandardOutput ./work/architecture-rejection.stdout.log -RedirectStandardError ./work/architecture-rejection.stderr.log
+          if ($process.ExitCode -eq 0) { throw 'Mismatched architecture request was accepted' }
+          $errorText = Get-Content -LiteralPath ./work/architecture-rejection.stderr.log -Raw
+          if (-not $errorText.Contains("Expected $wrong starter")) { throw 'Architecture test failed for an unexpected reason' }
+      - name: Inspect our own host executable (no game)
+        shell: powershell
+        run: |
+          ./scripts/Inspect-Game.ps1 -Exe ./work/build-msvc-${{ matrix.arch }}/Release/WolfUWHost.exe -OutFile ./work/host-fingerprint.json -ExpectedArchitecture ${{ matrix.arch }}
           $record = Get-Content -LiteralPath ./work/host-fingerprint.json -Raw | ConvertFrom-Json
-          if ($record.architecture -ne 'x86' -or $record.machine -ne '0x014C') { throw 'Wrong host architecture' }
-          $hash = (Get-FileHash ./work/build-msvc-x86/Release/WolfUWHost.exe -Algorithm SHA256).Hash
+          if ($record.architecture -ne '${{ matrix.arch }}' -or $record.machine -ne '${{ matrix.machine }}') { throw 'Wrong host architecture' }
+          $hash = (Get-FileHash ./work/build-msvc-${{ matrix.arch }}/Release/WolfUWHost.exe -Algorithm SHA256).Hash
           if ($record.sha256 -ne $hash) { throw 'Incorrect executable fingerprint' }
       - name: Package the Windows starter
         shell: pwsh
         run: |
           $package = Join-Path $PWD 'work/windows-starter'
+          $binaries = 'work/build-msvc-${{ matrix.arch }}/Release'
           New-Item -ItemType Directory -Path $package -Force | Out-Null
           $files = @(
-            'work/build-msvc-x86/Release/WolfUltrawide.dll',
-            'work/build-msvc-x86/Release/WolfUWHost.exe',
-            'work/build-msvc-x86/Release/wolf_core_tests.exe',
-            'work/build-msvc-x86/Release/WolfUltrawide.ini',
+            (Join-Path $binaries 'WolfUltrawide.dll'),
+            (Join-Path $binaries 'WolfUWHost.exe'),
+            (Join-Path $binaries 'wolf_core_tests.exe'),
+            (Join-Path $binaries 'WolfUltrawide.ini'),
             'scripts/Test-Windows.ps1',
             'scripts/Inspect-Game.ps1',
             'docs/WINDOWS_TESTING.md',
             'docs/VALIDATION.md'
           )
           Copy-Item -LiteralPath $files -Destination $package
-          @'
+          $instructions = @'
           Wolf Ultrawide Starter: observe-only, no verified game fix
+          Architecture: __ARCH__. Keep this package separate from other architectures.
 
           1. Extract this ZIP fully into a writable folder outside Steam.
           2. Open PowerShell in that extracted folder.
-          3. Run: .\Test-Windows.ps1 -BinDir .
+          3. Run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Test-Windows.ps1 -BinDir . -ExpectedArchitecture __ARCH__
           4. Record the result. This tests the starter, not the game.
 
           To keep a diagnostic log:
           .\WolfUWHost.exe --log .\manual-observe.log
 
           To inspect your own local Steam executable without uploading it:
-          $gameExe = Read-Host 'Full path to the executable Steam launches'
-          .\Inspect-Game.ps1 -Exe $gameExe -OutFile .\local\steam-build.json
+          $gameExe = (Read-Host 'Full path to the executable Steam launches').Trim().Trim('"')
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Inspect-Game.ps1 -Exe $gameExe -OutFile .\local\steam-build.json -ExpectedArchitecture __ARCH__
 
           No game files are included. There are no verified game addresses,
           memory patches, in-game loader, or visual ultrawide changes yet.
           WINDOWS_TESTING.md contains the full source-project testing guide;
           the scripts are beside the binaries in this standalone download.
-          '@ | Set-Content -LiteralPath (Join-Path $package 'START-HERE.txt') -Encoding utf8
+          '@
+          $instructions.Replace('__ARCH__', $env:WOLF_BUILD_ARCH) | Set-Content -LiteralPath (Join-Path $package 'START-HERE.txt') -Encoding utf8
       - uses: actions/upload-artifact@v4
         with:
-          name: observe-only-starter-win32
+          name: ${{ matrix.artifact }}
           if-no-files-found: error
           path: work/windows-starter/

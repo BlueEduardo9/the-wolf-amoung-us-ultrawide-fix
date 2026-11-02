@@ -7,13 +7,20 @@ tested. Record each local result separately; leave unrun tests marked **not run*
 
 ## 1. Test the DLL without the game
 
-Use Windows 10/11 and a writable folder outside Steam. Build with MSVC or place
-the four cross-built outputs together in a folder. From the source repository:
+Use Windows 10/11 and a writable folder outside Steam. Keep x86 and x64 packages
+separate; do not mix their DLLs, hosts or core test EXEs. For an extracted x64
+Actions artifact, open PowerShell in its folder and run:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Test-Windows.ps1 -BinDir . -ExpectedArchitecture x64
+```
+
+For a source checkout or prepared cross-build:
 
 ```powershell
 # For the prepared cross-build files transferred to this folder:
 & .\scripts\Test-Windows.ps1 -BinDir .\work\build-win32
-# For a native VS build, use .\work\build-msvc-x86\Release instead.
+# Native VS builds use .\work\build-msvc-x64\Release or .\work\build-msvc-x86\Release.
 ```
 
 The script runs the Windows core executable, loads/unloads the DLL using the
@@ -35,7 +42,8 @@ Expected host exit code: `0`. Expected initialization result: `1`. Expected fiel
 
 ```text
 HOST_EXE=...WolfUWHost.exe
-HOST_MACHINE=0x14c
+HOST_MACHINE=0x8664
+RUNTIME_ARCHITECTURE=x64
 TARGET_WIDTH=3440
 TARGET_HEIGHT=1440
 TARGET_ASPECT=2.388888889
@@ -44,8 +52,10 @@ MEMORY_WRITES=0
 HOOKS_INSTALLED=0
 ```
 
-These are the expected local outputs; CI also verified the key diagnostic fields
-in its host log. The log must identify the test host. Host exit codes: `1` for
+These fields describe the x64 package. The x86 package reports
+`HOST_MACHINE=0x14c` and `RUNTIME_ARCHITECTURE=x86`. They are the expected local
+outputs; consult the successful CI job for that architecture for observed
+results. The log must identify the test host. Host exit codes: `1` for
 arguments/exports/API exceptions, `2` for
 load failure, `3` for a rejected/failed initialization. DLL results are in
 `include/wolfuw/api.hpp`. Windows error `193` often means the wrong machine type;
@@ -64,10 +74,18 @@ drawing a conclusion.
    & .\scripts\Inspect-Game.ps1 -Exe $gameExe -OutFile .\local\steam-build.json
    ```
 
-3. Keep the JSON local. Confirm `machine=0x014C`, `architecture=x86`, and
-   `optional_header_magic=0x010B` before trying this x86 DLL. If different, stop
-   the loading experiment and plan the matching architecture; changing only the
-   DLL filename is insufficient.
+3. Keep the JSON local. Match all three architecture fields to the selected
+   package before considering loading:
+
+   | Package | Machine | Architecture | Optional header |
+   | --- | --- | --- | --- |
+   | x64 | `0x8664` | `x64` | `0x020B` (PE32+) |
+   | x86 / win32 | `0x014C` | `x86` | `0x010B` (PE32) |
+
+   `Inspect-Game.ps1 -ExpectedArchitecture x64` (or `x86`) warns when the EXE
+   disagrees with your selected package. Changing the DLL filename does not
+   change its architecture. Matching architecture is not a verified patch
+   profile or proof of successful game loading.
 4. Record Steam's installed build ID, branch, game language, Windows version,
    GPU/driver, display scaling, monitor mode and any other mods/overlays in your
    local notes. The script leaves the Steam build ID blank; it does not query
