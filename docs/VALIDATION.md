@@ -6,11 +6,28 @@ installation or game was executed.
 
 The baseline table below records the original x86 build. x64 support was added
 after local read-only inspection identified an x64/PE32+ target. That report is
-not a verified game profile. The prepared cloud toolchain remains x86; the new
-x64 build, host/DLL tests, inspection script and architecture guards run in a
-separate Windows CI job. Check the matching successful job in
-[Actions](https://github.com/BlueEduardo9/the-wolf-amoung-us-ultrawide-fix/actions)
-for a later artifact; do not infer x64 test results from the x86 baseline.
+not a verified game profile. The prepared cloud toolchain remains x86; x64 is
+built and executed on the Windows CI runner.
+
+The x86 and x64 jobs both passed in
+[CI run 41529094259](https://github.com/BlueEduardo9/the-wolf-amoung-us-ultrawide-fix/actions/runs/41529094259)
+for source commit `a7a18d7704c0ae6002e8029186ffd4098c6aaecb`:
+
+| x86/x64 matrix check | Observed result |
+| --- | --- |
+| Native MSVC Release build | PASS for both architectures |
+| Core tests | PASS: 43 synthetic checks per architecture |
+| DLL load/exports/init/unload | PASS in each matching standalone host |
+| Windows PowerShell smoke/failure cases | PASS for both architectures, including Unicode config/log paths |
+| Mismatched architecture request | PASS: rejected before loading on both architectures |
+| PE/SHA-256 inspection | PASS against each job's own host executable |
+| Downloads | PASS: separate `observe-only-starter-x64` and `observe-only-starter-win32` artifacts |
+| Actual Steam game loading or rendering | NOT RUN; no game patch targets have been discovered |
+
+The x64 job confirms the standalone diagnostic runtime handles AMD64/PE32+
+headers. It does not verify any game executable hash, hooks, rendering changes,
+or in-game loading method. No user's game files or local fingerprint were
+published with the source.
 
 | Check | Observed result |
 | --- | --- |
