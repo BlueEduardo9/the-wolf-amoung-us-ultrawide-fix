@@ -44,7 +44,8 @@ jobs:
             'work/build-msvc-x86/Release/WolfUltrawide.ini',
             'scripts/Test-Windows.ps1',
             'scripts/Inspect-Game.ps1',
-            'docs/WINDOWS_TESTING.md'
+            'docs/WINDOWS_TESTING.md',
+            'docs/VALIDATION.md'
           )
           Copy-Item -LiteralPath $files -Destination $package
           @'

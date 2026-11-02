@@ -1,8 +1,9 @@
 # Windows testing: Steam, 3440×1440
 
-The steps below are instructions to execute locally. They have not been run
-against Windows or The Wolf Among Us in this environment. Record each observed
-result separately; leave unrun tests marked **not run**.
+Run the steps below on your own Windows PC. Automated core, DLL-host, failure,
+Unicode-path and EXE-inspection checks have passed in Windows CI; see
+[the validation record](VALIDATION.md). The actual Steam game has not been
+tested. Record each local result separately; leave unrun tests marked **not run**.
 
 ## 1. Test the DLL without the game
 
@@ -43,8 +44,9 @@ MEMORY_WRITES=0
 HOOKS_INSTALLED=0
 ```
 
-These are expected outputs, not captured Windows results. The log must identify
-the test host. Host exit codes: `1` for arguments/exports/API exceptions, `2` for
+These are the expected local outputs; CI also verified the key diagnostic fields
+in its host log. The log must identify the test host. Host exit codes: `1` for
+arguments/exports/API exceptions, `2` for
 load failure, `3` for a rejected/failed initialization. DLL results are in
 `include/wolfuw/api.hpp`. Windows error `193` often means the wrong machine type;
 `126` often means a missing module/dependency. Inspect the actual error before

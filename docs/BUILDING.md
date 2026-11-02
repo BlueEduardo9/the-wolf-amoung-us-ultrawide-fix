@@ -61,8 +61,9 @@ ctest --preset windows-x86
 The preset selects **Win32**, even on 64-bit Windows, and uses the static MSVC
 runtime. Native Windows CTest includes a DLL smoke test in addition to the core
 test. The PowerShell script adds failure and Unicode-path coverage. The MSVC
-recipe has not been run in the prepared Linux environment; use the validation
-record for actual results.
+recipe has also passed on GitHub's Windows Server 2022 runner; use the validation
+record for the exact observed results. Your own Windows PC and Steam game still
+need local testing.
 
 If local PowerShell policy blocks a downloaded script, review the script and use
 your normal approved method for running local development scripts. This project
@@ -71,6 +72,6 @@ does not change machine-wide execution policy.
 ## CI
 
 The included workflow checks the source allowlist and builds/tests Win32 on a
-Windows runner. It is a recipe until you run it in your own GitHub repository.
-Neither a checked-in workflow nor a successful compiler result is evidence of
-game compatibility.
+Windows runner. It packages a standalone artifact with this project's binaries,
+example INI, inspection/smoke scripts and instructions. A successful run is linked
+in the validation record. These checks do not establish game compatibility.
