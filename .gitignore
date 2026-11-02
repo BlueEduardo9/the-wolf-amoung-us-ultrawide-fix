@@ -1,0 +1,41 @@
+# Default deny: only the original source/config/docs paths below may be published.
+# Keep Steam files elsewhere; local/ and work/ remain ignored at any depth.
+# Update scripts/check_public_files.py as well when adding your own source.
+*
+!/.gitignore
+!/.gitattributes
+!/CMakeLists.txt
+!/CMakePresets.json
+!/README.md
+!/config/
+!/config/WolfUltrawide.ini
+!/docs/
+!/docs/BUILDING.md
+!/docs/WINDOWS_TESTING.md
+!/docs/RESEARCH.md
+!/docs/VALIDATION.md
+!/include/
+!/include/wolfuw/
+!/include/wolfuw/api.hpp
+!/include/wolfuw/core.hpp
+!/src/
+!/src/core.cpp
+!/src/windows/
+!/src/windows/dllmain.cpp
+!/src/windows/exports.def
+!/src/windows/game_integration.cpp
+!/src/windows/runtime.cpp
+!/src/windows/runtime.hpp
+!/src/windows/version.rc
+!/tools/
+!/tools/windows_host.cpp
+!/tests/
+!/tests/core_tests.cpp
+!/scripts/
+!/scripts/Inspect-Game.ps1
+!/scripts/Test-Windows.ps1
+!/scripts/check_public_files.py
+!/scripts/verify_pe.py
+!/.github/
+!/.github/workflows/
+!/.github/workflows/build.yml

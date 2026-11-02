@@ -1,0 +1,66 @@
+name: Build starter (no game files)
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-x86:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify source-only allowlist
+        run: python scripts/check_public_files.py
+      - name: Configure Win32
+        run: cmake --preset windows-x86
+      - name: Build
+        run: cmake --build --preset windows-x86
+      - name: Core and DLL smoke tests (no game)
+        run: ctest --preset windows-x86
+      - name: Negative cases and Unicode paths (no game)
+        shell: pwsh
+        run: ./scripts/Test-Windows.ps1 -BinDir ./work/build-msvc-x86/Release
+      - name: Package the Windows starter
+        shell: pwsh
+        run: |
+          $package = Join-Path $PWD 'work/windows-starter'
+          New-Item -ItemType Directory -Path $package -Force | Out-Null
+          $files = @(
+            'work/build-msvc-x86/Release/WolfUltrawide.dll',
+            'work/build-msvc-x86/Release/WolfUWHost.exe',
+            'work/build-msvc-x86/Release/wolf_core_tests.exe',
+            'work/build-msvc-x86/Release/WolfUltrawide.ini',
+            'scripts/Test-Windows.ps1',
+            'scripts/Inspect-Game.ps1',
+            'docs/WINDOWS_TESTING.md'
+          )
+          Copy-Item -LiteralPath $files -Destination $package
+          @'
+          Wolf Ultrawide Starter: observe-only, no verified game fix
+
+          1. Extract this ZIP fully into a writable folder outside Steam.
+          2. Open PowerShell in that extracted folder.
+          3. Run: .\Test-Windows.ps1 -BinDir .
+          4. Record the result. This tests the starter, not the game.
+
+          To keep a diagnostic log:
+          .\WolfUWHost.exe --log .\manual-observe.log
+
+          To inspect your own local Steam executable without uploading it:
+          $gameExe = Read-Host 'Full path to the executable Steam launches'
+          .\Inspect-Game.ps1 -Exe $gameExe -OutFile .\local\steam-build.json
+
+          No game files are included. There are no verified game addresses,
+          memory patches, in-game loader, or visual ultrawide changes yet.
+          WINDOWS_TESTING.md contains the full source-project testing guide;
+          the scripts are beside the binaries in this standalone download.
+          '@ | Set-Content -LiteralPath (Join-Path $package 'START-HERE.txt') -Encoding utf8
+      - uses: actions/upload-artifact@v4
+        with:
+          name: observe-only-starter-win32
+          if-no-files-found: error
+          path: work/windows-starter/

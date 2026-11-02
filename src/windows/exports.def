@@ -1,0 +1,5 @@
+LIBRARY WolfUltrawide
+EXPORTS
+    WolfUW_ApiVersion
+    WolfUW_Initialize
+    WolfUW_Shutdown
