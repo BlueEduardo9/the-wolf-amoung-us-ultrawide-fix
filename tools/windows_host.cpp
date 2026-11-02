@@ -10,6 +10,16 @@
 
 namespace {
 
+std::string Utf8(const std::wstring& text) {
+    const int size = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, text.c_str(), -1, nullptr, 0, nullptr, nullptr);
+    if (size == 0) throw std::runtime_error("Cannot encode output path as UTF-8");
+    std::vector<char> buffer(static_cast<std::size_t>(size));
+    if (WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, text.c_str(), -1, buffer.data(), size, nullptr, nullptr) != size) {
+        throw std::runtime_error("Cannot encode output path as UTF-8");
+    }
+    return std::string(buffer.data(), static_cast<std::size_t>(size - 1));
+}
+
 template<class Function>
 Function LoadFunction(HMODULE module, const char* name) {
     const FARPROC address = GetProcAddress(module, name);
@@ -42,8 +52,8 @@ int wmain(int argc, wchar_t** argv) {
         for (int index = 1; index < argc; ++index) {
             const std::wstring option = argv[index];
             if (option == L"--help") {
-                std::wcout << L"WolfUWHost [--dll PATH] [--config PATH] [--log PATH]\n"
-                    L"Runs the observe-only DLL inside this test host. Does not launch or inject into the game.\n";
+                std::cout << "WolfUWHost [--dll PATH] [--config PATH] [--log PATH]\n"
+                    "Runs the observe-only DLL inside this test host. Does not launch or inject into the game.\n";
                 return 0;
             }
             if ((option != L"--dll" && option != L"--config" && option != L"--log") || index + 1 >= argc) {
@@ -59,7 +69,7 @@ int wmain(int argc, wchar_t** argv) {
         // Restrict dependent-DLL lookup. All our paths are absolute.
         Module module{LoadLibraryExW(dll.c_str(), nullptr, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)};
         if (!module.value) {
-            std::wcerr << L"LoadLibraryExW failed; Windows error " << GetLastError() << L"\n";
+            std::cerr << "LoadLibraryExW failed; Windows error " << GetLastError() << "\n";
             return 2;
         }
         const auto version = LoadFunction<wolfuw::ApiVersionFn>(module.value, "WolfUW_ApiVersion");
@@ -68,9 +78,9 @@ int wmain(int argc, wchar_t** argv) {
         if (version() != wolfuw::api_version) throw std::runtime_error("Unsupported DLL API version");
         const auto result = initialize(config.c_str(), log.c_str());
         shutdown();
-        std::wcout << L"Startup result: " << result << L"\nLog: " << log.c_str() << L"\n";
+        std::cout << "Startup result: " << result << "\nLog: " << Utf8(log.wstring()) << "\n";
         if (result != static_cast<std::int32_t>(wolfuw::StartupResult::observe_only_no_verified_profile)) return 3;
-        std::wcout << L"Diagnostic session completed in WolfUWHost. No verified game profile; no game fix applied.\n";
+        std::cout << "Diagnostic session completed in WolfUWHost. No verified game profile; no game fix applied.\n";
         return 0;
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

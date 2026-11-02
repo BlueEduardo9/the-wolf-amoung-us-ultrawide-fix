@@ -24,6 +24,14 @@ jobs:
       - name: Negative cases and Unicode paths (no game)
         shell: pwsh
         run: ./scripts/Test-Windows.ps1 -BinDir ./work/build-msvc-x86/Release
+      - name: Inspect our own host executable (no game)
+        shell: pwsh
+        run: |
+          ./scripts/Inspect-Game.ps1 -Exe ./work/build-msvc-x86/Release/WolfUWHost.exe -OutFile ./work/host-fingerprint.json
+          $record = Get-Content -LiteralPath ./work/host-fingerprint.json -Raw | ConvertFrom-Json
+          if ($record.architecture -ne 'x86' -or $record.machine -ne '0x014C') { throw 'Wrong host architecture' }
+          $hash = (Get-FileHash ./work/build-msvc-x86/Release/WolfUWHost.exe -Algorithm SHA256).Hash
+          if ($record.sha256 -ne $hash) { throw 'Incorrect executable fingerprint' }
       - name: Package the Windows starter
         shell: pwsh
         run: |

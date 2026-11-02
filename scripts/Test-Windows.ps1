@@ -46,3 +46,6 @@ try {
 } finally {
     if (Test-Path -LiteralPath $testRoot) { Remove-Item -LiteralPath $testRoot -Recurse -Force }
 }
+# Expected rejection cases leave LASTEXITCODE nonzero. Report the script's own
+# success explicitly so callers such as GitHub Actions do not propagate it.
+exit 0
